@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 run_spec() {
   local spec="$1"
   echo "==> $spec"
-  nvim --headless -u /Users/suremoon/.config/nvim/init.lua +"set rtp+=$ROOT" +"lua local ok,err = pcall(dofile, '$ROOT/$spec'); if not ok then print(err); vim.cmd('cquit') else vim.cmd('qa!') end"
+  nvim --headless -u "${HOME}/.config/nvim/init.lua" +"set rtp+=$ROOT" +"lua local ok,err = pcall(dofile, '$ROOT/$spec'); if not ok then print(err); vim.cmd('cquit') else vim.cmd('qa!') end"
 }
 
 run_spec "test/mybatis_spec.lua"
