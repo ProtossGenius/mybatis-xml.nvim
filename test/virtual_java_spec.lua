@@ -37,6 +37,12 @@ vim.fn.writefile({
   '    <select id="selectUserById" resultType="com.example.User">',
   '        select * from user where id = #{id}',
   '    </select>',
+  '    <select id="selectUsers" resultType="com.example.User">',
+  '        select * from user',
+  '    </select>',
+  '    <delete id="deleteUser">',
+  '        delete from user where id = #{id}',
+  '    </delete>',
   '</mapper>',
 }, xml_path)
 
