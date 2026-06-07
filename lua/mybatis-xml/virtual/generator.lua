@@ -135,23 +135,46 @@ end
 
 local function parse_methods_fallback(lines)
   local methods = {}
-  local current_decl = {}
-  for _, line in ipairs(lines) do
-    local clean = line:gsub('//.*$', ''):gsub('/%*.-%*/', '')
-    local trimmed = vim.trim(clean)
-    if trimmed ~= '' then
-      table.insert(current_decl, clean)
-      local full_decl = table.concat(current_decl, ' ')
-      
-      local brace_idx = full_decl:find('{')
-      local semi_idx = full_decl:find(';')
-      
-      if brace_idx and (not semi_idx or brace_idx < semi_idx) then
-        current_decl = {}
-      elseif semi_idx then
-        local decl = full_decl:sub(1, semi_idx - 1)
-        current_decl = {}
+  local full_text = table.concat(lines, '\n')
+  
+  -- Strip block comments first
+  full_text = full_text:gsub('/%*.-%*/', '')
+  
+  local brace_level = 0
+  local current_statement = {}
+  local in_string = false
+  local in_line_comment = false
+  
+  local i = 1
+  while i <= #full_text do
+    local char = full_text:sub(i, i)
+    local next_char = i < #full_text and full_text:sub(i + 1, i + 1) or ''
+    
+    if in_line_comment then
+      if char == '\n' then
+        in_line_comment = false
+      end
+    elseif in_string then
+      if char == '"' and full_text:sub(i - 1, i - 1) ~= '\\' then
+        in_string = false
+      end
+    elseif char == '/' and next_char == '/' then
+      in_line_comment = true
+      i = i + 1
+    elseif char == '"' then
+      in_string = true
+    elseif char == '{' then
+      brace_level = brace_level + 1
+      current_statement = {}
+    elseif char == '}' then
+      brace_level = brace_level - 1
+      current_statement = {}
+    elseif char == ';' then
+      if brace_level == 1 then
+        local decl = table.concat(current_statement, "")
+        current_statement = {}
         
+        decl = vim.trim(decl:gsub('%s+', ' '))
         local params_block = decl:match('%b()')
         if params_block then
           local before_params = vim.trim(decl:sub(1, decl:find('%b()') - 1))
@@ -199,11 +222,20 @@ local function parse_methods_fallback(lines)
             end
           end
         end
+      else
+        current_statement = {}
+      end
+    else
+      if brace_level == 1 then
+        table.insert(current_statement, char)
       end
     end
+    i = i + 1
   end
+  
   return methods
 end
+
 
 --- 生成虚拟 Java 文件的内容（行列表）
 ---@param xml_path string
